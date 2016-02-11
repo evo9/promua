@@ -28,7 +28,10 @@ fclose($h);
 //    die;
 //}
 
-$pattern = '/<a[\s.]*class\=".*pager_lastitem"[\s.]*href\="(.*?)">.*<\/a>/is';
+//$pattern = '/<a[\s.]*class\=".*pager_lastitem"[\s.]*href\="(.*?)">.*<\/a>/is';
+$pattern = '/<a class=".*pager_lastitem" href="(.*?)"[^>]*>.*<\/a>/is';
 preg_match_all($pattern, $content, $href, PREG_SET_ORDER);
+$pattern = '/\?.*/';
+$href = preg_replace($pattern, '', $href[0][1]);
 var_dump($href);
 

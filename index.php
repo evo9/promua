@@ -23,18 +23,20 @@ $dbOpt = [
 $promua = new Promua($dbOpt);
 
 switch ($command) {
-    case 'company-categories-list-page':
+    case 'company-categories-list-content':
 
         $promua->getCompanyCategories();
-        echo 'Страница со списком компаний сохранена. ';
+        echo 'Страница со списком категорий компаний сохранена ';
 
         break;
     case 'company-categories-list-parse':
         $promua->parseCompanyCategories();
+        echo 'Категории компаний сохранены ';
 
         break;
-    case 'companies-list':
-        $promua->getCompanies();
+    case 'companies-list-content':
+        $promua->getCompaniesListContent();
+        echo 'Страницы со спискамим компаий загружены ';
 
         break;
     default:

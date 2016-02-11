@@ -8,6 +8,7 @@ define('DB_USER', '');
 define('DB_PASS', '');
 
 define('CSV', ROOT . '/csv/');
+define('CONTENT', ROOT_DIR . '/content/');
+define('CONTENT_EXT', '.html');
 
-define('COOKIE_FILE', ROOT . '/cookie.txt');
 define('USER_AGENT', 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0');
