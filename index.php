@@ -1,42 +1,43 @@
 <?php
 
-define('ROOT', __DIR__);
+if (!isset($argv[1])) {
+    exit('Остутствует команда! ');
+}
 
-require_once(ROOT . '/config.php');
-require_once(ROOT . '/safemysql.class.php');
+$command = $argv[1];
 
-$path = '';
 
-$content = getCurlContent($path);
+define('ROOT_DIR', __DIR__);
 
-$h = fopen(CSV . 'companies', 'w+');
-fwrite($h, $content);
-fclose($h);
+require_once ROOT_DIR . '/config.php';
+require_once ROOT_DIR . '/safemysql.class.php';
+require_once ROOT_DIR . '/Snoopy.class.php';
+require_once ROOT_DIR . '/promua.class.php';
 
-function getCurlContent($path, $urlData = null)
-{
-    $ch = curl_init();
+$dbOpt = [
+    'user' => DB_USER,
+    'pass' => DB_PASS,
+    'db' => DB_NAME
+];
 
-    curl_setopt($ch, CURLOPT_URL, DOMAIN . $path);
-    curl_setopt($ch, CURLOPT_USERAGENT, USER_AGENT);
-    $headers = array
-    (
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*;q=0.8',
-        'Accept-Language: ru,en-us;q=0.7,en;q=0.3',
-        'Accept-Encoding: deflate',
-        'Accept-Charset: windows-1251,utf-8;q=0.7,*;q=0.7'
-    );
-    curl_setopt($ch, CURLOPT_HTTPHEADER,$headers);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 0);
-    curl_setopt($ch, CURLOPT_COOKIEFILE, COOKIE_FILE);
-    curl_setopt($ch, CURLOPT_COOKIEJAR, COOKIE_FILE);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    if (!$urlData) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $urlData);
-    }
-    $output = curl_exec($ch);
-    curl_close($ch);
+$promua = new Promua($dbOpt);
 
-    return $output;
+switch ($command) {
+    case 'company-categories-list-page':
+
+        $promua->getCompanyCategories();
+        echo 'Страница со списком компаний сохранена. ';
+
+        break;
+    case 'company-categories-list-parse':
+        $promua->parseCompanyCategories();
+
+        break;
+    case 'companies-list':
+        $promua->getCompanies();
+
+        break;
+    default:
+        echo 'Команда не найдена! ';
+        break;
 }
