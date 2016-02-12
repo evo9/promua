@@ -116,11 +116,12 @@ class Promua
         $categories = $this->db->getAll($sql, 0);
         foreach ($categories as $cat) {
             if ($lastRecord) {
+                $lastRecord = $lastRecord[0];
                 if ($cat['id'] < $lastRecord['category_id']) {
                     continue;
                 }
                 else {
-                    $this->paginate($lastRecord['href'], $referer, $lastRecord['id']);
+                    $this->paginate($lastRecord['href'], $referer, $lastRecord['category_id']);
                 }
                 $lastRecord = null;
             }
@@ -143,7 +144,6 @@ class Promua
         $this->snoopy->referer = $referer;
         $this->snoopy->fetch($path);
         $content = $this->snoopy->results;
-
         $file = CONTENT . $link;
         $this->makeFile($content, $file);
 
