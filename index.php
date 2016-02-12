@@ -39,7 +39,7 @@ switch ($command) {
 
     case 'companies-list-content':
         $promua->getCompaniesListContent();
-        echo "Страницы со спискамим компаий загружены \r\n";
+        echo "Страницы со спискамим компаний загружены \r\n";
 
         break;
 
