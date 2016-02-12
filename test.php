@@ -1,10 +1,11 @@
 <?php
 header('Content-Type: text/html; charset=utf-8');
 
-/*$json  = '{"shop_settings": {"one_click_order": true, "one_click_order_on_portal": true, "contact_now_display_off": true}, "name": "\u0410\u041d \u041c\u0410\u0419\u0414\u0410\u041d", "phones": [{"number": "+380 (97) 039-19-67", "description": ""}], "contacts_url": "http://an-majdan.prom.ua/contacts", "absolute_url": "http://an-majdan.prom.ua/", "invalid_phone_url": "http://prom.ua/company/mark_invalid_phone/2201072?page_place=portal-catalog-companies", "id": 2201072}';
+$json  = '{"shop_settings": {"one_click_order": true, "one_click_order_on_portal": true, "contact_now_display_off": false}, "name": "\u0427\u041f \u0411\u0430\u0431\u0438\u0447", "phones": [{"number": "+380 (96) 953-95-44", "description": "\u0421\u0432\u0435\u0442\u043b\u0430\u043d\u0430"}, {"number": "+380 (66) 829-49-65", "description": "\u0410\u043d\u043d\u0430"}, {"number": "+380 (50) 956-20-75", "description": "\u0414\u043b\u044f \u0436\u0430\u043b\u043e\u0431 (\u0441\u043c\u0441)"}, {"number": "+380 (50) 298-69-47", "description": "\u0418\u043d\u043d\u0430"}], "contacts_url": "http://ranec.in.ua/contacts", "absolute_url": "http://ranec.in.ua/", "invalid_phone_url": "http://prom.ua/company/mark_invalid_phone/611137?page_place=portal-catalog-companies", "id": 611137}';
 echo '<pre>';
-var_dump(json_decode($json));die;
-echo '</pre>';*/
+var_dump(json_decode($json));
+echo '</pre>';
+die;
 
 $file = __DIR__ . '/content/cc12-Transport.html';
 $h = fopen($file, 'r');
