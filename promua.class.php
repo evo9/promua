@@ -110,15 +110,23 @@ class Promua
     {
         $referer = DOMAIN . self::COMPANY_CATEGORIES;
 
-        $companies = $this->db->getAll('SELECT href FROM `categories`');
-        foreach ($companies as $company) {
-            $this->companies[] = $company['href'];
-        }
+        $lastRecord = $this->db->getAll('SELECT category_id, href FROM `categories` ORDER BY id DESC LIMIT 1');
 
         $sql = 'SELECT * FROM `company_categories` WHERE is_read = ?i';
         $categories = $this->db->getAll($sql, 0);
         foreach ($categories as $cat) {
-            $this->paginate($cat['href'], $referer, $cat['id']);
+            if ($lastRecord) {
+                if ($cat['id'] < $lastRecord['category_id']) {
+                    continue;
+                }
+                else {
+                    $this->paginate($lastRecord['href'], $referer, $lastRecord['id']);
+                }
+                $lastRecord = null;
+            }
+            else {
+                $this->paginate($cat['href'], $referer, $cat['id']);
+            }
 
             $sql = 'UPDATE `company_categories` SET is_read = 1 WHERE id = ?i';
             $this->db->query($sql, $cat['id']);
@@ -139,10 +147,8 @@ class Promua
         $file = CONTENT . $link;
         $this->makeFile($content, $file);
 
-        if (!in_array($link, $this->companies)) {
-            $sql = 'INSERT INTO `categories` SET category_id = ?i, href = ?s';
-            $this->db->query($sql, $categoryId, $link);
-        }
+        $sql = 'INSERT INTO `categories` SET category_id = ?i, href = ?s';
+        $this->db->query($sql, $categoryId, $link);
 
         echo "Добавлена страница \r\n";
 
