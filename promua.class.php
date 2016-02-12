@@ -110,13 +110,14 @@ class Promua
     {
         $referer = DOMAIN . self::COMPANY_CATEGORIES;
 
-        $lastRecord = $this->db->getAll('SELECT category_id, href FROM `categories` ORDER BY id DESC LIMIT 1');
+        $lastRecord = $this->db->getAll('SELECT id, category_id, href FROM `categories` ORDER BY id DESC LIMIT 1');
 
         $sql = 'SELECT * FROM `company_categories` WHERE is_read = ?i';
         $categories = $this->db->getAll($sql, 0);
         foreach ($categories as $cat) {
             if ($lastRecord) {
                 $lastRecord = $lastRecord[0];
+                $this->db->query('DELETE FROM `categories` WHERE id = ?i', $lastRecord['id']);
                 if ($cat['id'] < $lastRecord['category_id']) {
                     continue;
                 }
@@ -164,11 +165,12 @@ class Promua
 
     public function getCompanyInfo()
     {
-        $file = CONTENT;
+        $this->db->query('TRUNCATE `companies`');
+
         $sql = 'SELECT * FROM `categories` WHERE is_read = ?i';
         $companies = $this->db->getAll($sql, 0);
         foreach ($companies as $c) {
-            $file .= $c['href'];
+            $file = CONTENT . $c['href'];
             $html = file_get_html($file);
             $items = $html->find('.b-product-line__item');
             foreach ($items as $item) {
@@ -188,7 +190,6 @@ class Promua
             }
             echo "Страница пройдена \r\n";
         }
-
     }
 
     private function setCompany($categoryId)
@@ -199,6 +200,7 @@ class Promua
             'site' => null,
             'main_phone' => null,
             'phones' => null,
+            'other_contacts' => null,
             'contact_page' => null,
             'city' => null,
             'reviews' => null,
@@ -208,21 +210,27 @@ class Promua
 
     private function saveCompany()
     {
-        $fields = ['category_id', 'title', 'site', 'main_phone', 'phones', 'contact_page', 'city', 'reviews', 'other'];
-        $values = [];
+
+        $fields = [
+            'category_id',
+            'title', 'site',
+            'main_phone',
+            'phones',
+            'other_contacts',
+            'contact_page',
+            'city',
+            'reviews',
+            'other'
+        ];
+        $data = [];
         foreach ($fields as $key => $field) {
             if (isset($this->company[$field])) {
-                $values[] = "'" . htmlentities($this->company[$field]) . "'";
-            }
-            else {
-                unset($fields[$key]);
+                $data[$field] = htmlentities($this->company[$field]);
             }
         }
-        $sql = 'INSERT INTO `companies` '
-            . ' (' . implode(', ', $fields) . ') '
-            . ' VALUES (' . implode(', ', $values) . ')';
+        $sql = 'INSERT INTO `companies` SET ?u';
 
-        $this->db->query($sql);
+        $this->db->query($sql, $data);
     }
 
     private function getTitle($item)
@@ -260,6 +268,17 @@ class Promua
                 }
                 $this->company['phones'] = serialize($tmp);
             }
+            $contacts = $this->getAttrData($phonesBlock[0], 'data-pl-extra-contacts');
+            if ($contacts) {
+                $tmp = [];
+                foreach ($contacts->data as $contact) {
+                    $tmp[] = [
+                        'description' => $contact->description,
+                        'data' => $contact->data
+                    ];
+                }
+                $this->company['other_contacts'] = serialize($tmp);
+            }
         }
     }
 
@@ -286,6 +305,77 @@ class Promua
 
             $this->company['reviews'] = serialize($review);
         }
+    }
+
+    public function generateCsv()
+    {
+        $companies = $this->db->getAll('SELECT * FROM `companies`');
+        $csvArr = [];
+        $csvArr[] = [
+            'Название компании',
+            'Ссылка на сайт',
+            'Основной телефон',
+            'Телефоны',
+            'Дополнительные контакты',
+            'Ссылка на страницу контактов',
+            'Город',
+            'Отзывы'
+        ];
+        foreach ($companies as $company) {
+            $company = $this->data($company);
+
+            $phones = [];
+            if (count($company['phones']) > 0) {
+                foreach ($company['phones'] as $phone) {
+                    $phones[] = $phone['description'] . ' - ' . $phone['number'];
+                }
+            }
+            $phones = implode(', ', $phones);
+
+            $contacts = [];
+            if (count($company['other_contacts']) > 0) {
+                foreach ($company['other_contacts'] as $contact) {
+                    $contacts[] = $contact['description'] . ' - ' . $contact['data'];
+                }
+            }
+            $contacts = implode(', ', $contacts);
+
+            $reviews = $company['reviews']['title'] . '; Ссылка на отзывы - ' . $company['reviews']['href'];
+
+
+            $csvArr[] = [
+                $company['title'],
+                $company['site'],
+                $company['main_phone'],
+                $phones,
+                $contacts,
+                $company['contact_page'],
+                $company['city'],
+                $reviews
+            ];
+        }
+
+        $file = date('d-m-Y') . '.csv';
+        $path = CSV . $file;
+        $csv = new CsvWriter($path, $csvArr);
+        $csv->GetCsv();
+
+        return $file;
+    }
+
+    private function data($record)
+    {
+        $result = [];
+
+        foreach ($record as $field => $value) {
+            $value = html_entity_decode($value);
+            if (@unserialize($value) || is_array(@unserialize($value))) {
+                $value = unserialize($value);
+            }
+            $result[$field] =  $value;
+        }
+
+        return $result;
     }
 
 

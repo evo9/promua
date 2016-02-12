@@ -13,6 +13,7 @@ require_once ROOT_DIR . '/config.php';
 require_once ROOT_DIR . '/safemysql.class.php';
 require_once ROOT_DIR . '/Snoopy.class.php';
 require_once ROOT_DIR . '/simple_html_dom.php';
+require_once ROOT_DIR . '/write_read_csv.class.php';
 require_once ROOT_DIR . '/promua.class.php';
 
 $dbOpt = [
@@ -46,6 +47,12 @@ switch ($command) {
     case 'company-info':
         $promua->getCompanyInfo();
         echo "Информация о компаниях сохранена \r\n";
+
+        break;
+
+    case 'generate-csv':
+        $file = $promua->generateCsv();
+        echo "Файл " . $file . " сгенерирован \r\n";
 
         break;
 
