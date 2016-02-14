@@ -151,7 +151,7 @@ class Promua
         $sql = 'INSERT INTO `categories` SET category_id = ?i, href = ?s';
         $this->db->query($sql, $categoryId, $link);
 
-        echo "Добавлена страница \r\n";
+        echo "Добавлена страница " . $link . " \r\n";
 
         $nextLink = self::nextLink($file);
         if ($nextLink) {
@@ -186,7 +186,7 @@ class Promua
                 $this->saveCompany();
                 $sql = 'UPDATE `categories` SET is_read = 1 WHERE id = ?i';
                 $this->db->query($sql, $c['id']);
-                echo "Добавлена компания \r\n";
+                echo "Добавлена компания " . $this->company['title'] . " \r\n";
             }
             echo "Страница пройдена \r\n";
         }
@@ -213,7 +213,8 @@ class Promua
 
         $fields = [
             'category_id',
-            'title', 'site',
+            'title',
+            'site',
             'main_phone',
             'phones',
             'other_contacts',
@@ -310,8 +311,10 @@ class Promua
     public function generateCsv()
     {
         $companies = $this->db->getAll('SELECT * FROM `companies`');
+        $newCompanies = $this->removeDuplicate($companies);
         $csvArr = [];
         $csvArr[] = [
+            'Категория',
             'Название компании',
             'Ссылка на сайт',
             'Основной телефон',
@@ -321,11 +324,18 @@ class Promua
             'Город',
             'Отзывы'
         ];
-        foreach ($companies as $company) {
-            $company = $this->data($company);
+        foreach ($newCompanies as $company) {
+            foreach ($companies as $c) {
+                if ($company['id'] != $c['id'] && $company['title'] == $c['title']) {
+                    if (isset($companies[$c['category_id']])) {
+                        $company['categories'][] = $companies[$c['category_id']];
+                    }
+                }
+                }
+
 
             $phones = [];
-            if (count($company['phones']) > 0) {
+            if($company['phones'] && is_array($company['phones'])) {
                 foreach ($company['phones'] as $phone) {
                     $phones[] = $phone['description'] . ' - ' . $phone['number'];
                 }
@@ -333,7 +343,7 @@ class Promua
             $phones = implode(', ', $phones);
 
             $contacts = [];
-            if (count($company['other_contacts']) > 0) {
+            if ($company['other_contacts'] && is_array($company['other_contacts'])) {
                 foreach ($company['other_contacts'] as $contact) {
                     $contacts[] = $contact['description'] . ' - ' . $contact['data'];
                 }
@@ -344,6 +354,7 @@ class Promua
 
 
             $csvArr[] = [
+                implode(', ', $company['categories']),
                 $company['title'],
                 $company['site'],
                 $company['main_phone'],
@@ -363,6 +374,27 @@ class Promua
         return $file;
     }
 
+    private function removeDuplicate($companies)
+    {
+        $titles = [];
+        $categories = $this->getCategories();
+        foreach ($companies as $key => $company) {
+            if (!in_array($company['title'], $titles)) {
+                $titles[] = $company['title'];
+                $companies[$key] = $this->data($company);
+                $companies[$key]['categories'] = [];
+                if (isset($categories[$company['category_id']])) {
+                    $companies[$key]['categories'][] = $categories[$company['category_id']];
+                }
+            }
+            else {
+                unset($companies[$key]);
+            }
+        }
+
+        return $companies;
+    }
+
     private function data($record)
     {
         $result = [];
@@ -378,7 +410,15 @@ class Promua
         return $result;
     }
 
-
+    private function getCategories()
+    {
+        $result = [];
+        $categories = $this->db->getAll('SELECT * FROM `company_categories`');
+        foreach ($categories as $category) {
+            $result[$category['id']] = $category['category'];
+        }
+        return $result;
+    }
 
     public function testSql()
     {
