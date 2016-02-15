@@ -310,8 +310,10 @@ class Promua
 
     public function generateCsv()
     {
-        $companies = $this->db->getAll('SELECT * FROM `companies`');
-        $newCompanies = $this->removeDuplicate($companies);
+        $companies = $this->db->getAll('SELECT DISTINCT * FROM `companies` ');
+        echo "Получил компании \r\n";
+        $companyCategories = $this->db->getAll('SELECT c.title, cc.category FROM `companies` c JOIN `company_categories` cc ON (cc.id = c.category_id)');
+        echo "Получил категории компаний \r\n";
         $csvArr = [];
         $csvArr[] = [
             'Категория',
@@ -324,14 +326,21 @@ class Promua
             'Город',
             'Отзывы'
         ];
-        foreach ($newCompanies as $company) {
-            foreach ($companies as $c) {
-                if ($company['id'] != $c['id'] && $company['title'] == $c['title']) {
-                    if (isset($companies[$c['category_id']])) {
-                        $company['categories'][] = $companies[$c['category_id']];
-                    }
+        echo "Начало процесса формирования csv \r\n";
+        foreach ($companies as $company) {
+            echo $company['title'] . " \r\n";
+            $company = $this->data($company);
+            $categories = [];
+
+            echo "Поиск категорий компании \r\n";
+            foreach ($companyCategories as $key => $cc) {
+                if ($company['title'] == html_entity_decode($cc['title'])) {
+                    echo $cc['category'] . " \r\n";
+                    $categories[] = $cc['category'];
+                    unset($companyCategories[$key]);
                 }
-                }
+            }
+            $categories = implode(', ', $categories);
 
 
             $phones = [];
@@ -354,7 +363,7 @@ class Promua
 
 
             $csvArr[] = [
-                implode(', ', $company['categories']),
+                $categories,
                 $company['title'],
                 $company['site'],
                 $company['main_phone'],
@@ -366,33 +375,13 @@ class Promua
             ];
         }
 
+        echo "Запись csv файла \r\n";
         $file = date('d-m-Y') . '.csv';
         $path = CSV . $file;
         $csv = new CsvWriter($path, $csvArr);
         $csv->GetCsv();
 
         return $file;
-    }
-
-    private function removeDuplicate($companies)
-    {
-        $titles = [];
-        $categories = $this->getCategories();
-        foreach ($companies as $key => $company) {
-            if (!in_array($company['title'], $titles)) {
-                $titles[] = $company['title'];
-                $companies[$key] = $this->data($company);
-                $companies[$key]['categories'] = [];
-                if (isset($categories[$company['category_id']])) {
-                    $companies[$key]['categories'][] = $categories[$company['category_id']];
-                }
-            }
-            else {
-                unset($companies[$key]);
-            }
-        }
-
-        return $companies;
     }
 
     private function data($record)
